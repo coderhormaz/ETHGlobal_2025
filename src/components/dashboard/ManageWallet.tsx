@@ -10,7 +10,8 @@ import {
   Send, 
   History,
   ExternalLink,
-  CheckCircle
+  CheckCircle,
+  Shield
 } from 'lucide-react';
 import QRCode from 'react-qr-code';
 import { useAuth } from '../../contexts/AuthContext';
@@ -30,12 +31,16 @@ interface Transaction {
 const ManageWallet: React.FC = () => {
   const [showPrivateKey, setShowPrivateKey] = useState(false);
   const [showQRCode, setShowQRCode] = useState(false);
+  const [showDecryptModal, setShowDecryptModal] = useState(false);
+  const [decryptPassword, setDecryptPassword] = useState('');
+  const [decryptError, setDecryptError] = useState('');
+  const [isDecrypting, setIsDecrypting] = useState(false);
   const [balance, setBalance] = useState('0');
   const [transactions, setTransactions] = useState<Transaction[]>([]);
   const [loading, setLoading] = useState(true);
   const [copied, setCopied] = useState<string | null>(null);
   
-  const { wallet } = useAuth();
+  const { wallet, loadWallet } = useAuth();
 
   useEffect(() => {
     if (wallet?.address) {
@@ -69,6 +74,26 @@ const ManageWallet: React.FC = () => {
       setTimeout(() => setCopied(null), 2000);
     } catch (error) {
       console.error('Failed to copy:', error);
+    }
+  };
+
+  const handleDecryptWallet = async () => {
+    if (!decryptPassword) {
+      setDecryptError('Please enter your password');
+      return;
+    }
+
+    setIsDecrypting(true);
+    setDecryptError('');
+
+    try {
+      await loadWallet(decryptPassword);
+      setShowDecryptModal(false);
+      setDecryptPassword('');
+    } catch (error: any) {
+      setDecryptError('Invalid password. Please try again.');
+    } finally {
+      setIsDecrypting(false);
     }
   };
 
@@ -139,18 +164,35 @@ const ManageWallet: React.FC = () => {
             transition={{ delay: 0.2 }}
           >
             <h3 className="font-semibold text-white mb-4">Quick Actions</h3>
-            <div className="flex gap-3">
-              <button className="flex-1 flex items-center justify-center gap-2 py-3 px-4 bg-blue-600 hover:bg-blue-700 text-white rounded-xl transition-colors">
+            <div className="grid grid-cols-2 gap-3">
+              <button className="flex items-center justify-center gap-2 py-3 px-4 bg-blue-600 hover:bg-blue-700 text-white rounded-xl transition-colors">
                 <Send size={16} />
                 <span>Send</span>
               </button>
               <button 
                 onClick={() => setShowQRCode(true)}
-                className="flex-1 flex items-center justify-center gap-2 py-3 px-4 bg-purple-600 hover:bg-purple-700 text-white rounded-xl transition-colors"
+                className="flex items-center justify-center gap-2 py-3 px-4 bg-purple-600 hover:bg-purple-700 text-white rounded-xl transition-colors"
               >
                 <QrCode size={16} />
                 <span>Receive</span>
               </button>
+              {wallet.privateKey === '***encrypted***' ? (
+                <button 
+                  onClick={() => setShowDecryptModal(true)}
+                  className="flex items-center justify-center gap-2 py-3 px-4 bg-yellow-600 hover:bg-yellow-700 text-white rounded-xl transition-colors col-span-2"
+                >
+                  <Shield size={16} />
+                  <span>View Private Key</span>
+                </button>
+              ) : (
+                <button 
+                  onClick={() => setShowPrivateKey(!showPrivateKey)}
+                  className="flex items-center justify-center gap-2 py-3 px-4 bg-gray-600 hover:bg-gray-700 text-white rounded-xl transition-colors col-span-2"
+                >
+                  {showPrivateKey ? <EyeOff size={16} /> : <Eye size={16} />}
+                  <span>{showPrivateKey ? 'Hide' : 'Show'} Private Key</span>
+                </button>
+              )}
             </div>
           </motion.div>
         </div>
@@ -197,9 +239,17 @@ const ManageWallet: React.FC = () => {
               <div className="flex items-center gap-3">
                 <div className="flex-1 p-3 bg-black/40 border border-gray-600/50 rounded-xl">
                   {wallet.privateKey === '***encrypted***' ? (
-                    <p className="text-yellow-400 font-mono text-sm">
-                      Private key is encrypted. Use the wallet modal to decrypt and view.
-                    </p>
+                    <div className="flex items-center justify-between">
+                      <p className="text-yellow-400 font-mono text-sm">
+                        🔒 Private key is encrypted for security
+                      </p>
+                      <button
+                        onClick={() => setShowDecryptModal(true)}
+                        className="text-blue-400 hover:text-blue-300 text-sm font-medium underline"
+                      >
+                        Decrypt & View
+                      </button>
+                    </div>
                   ) : (
                     <p className="text-white font-mono text-sm break-all">
                       {showPrivateKey ? wallet.privateKey : '•'.repeat(64)}
@@ -211,6 +261,7 @@ const ManageWallet: React.FC = () => {
                     <button
                       onClick={() => setShowPrivateKey(!showPrivateKey)}
                       className="p-3 bg-gray-600 hover:bg-gray-700 text-white rounded-xl transition-colors"
+                      title={showPrivateKey ? 'Hide private key' : 'Show private key'}
                     >
                       {showPrivateKey ? <EyeOff size={16} /> : <Eye size={16} />}
                     </button>
@@ -218,6 +269,7 @@ const ManageWallet: React.FC = () => {
                       onClick={() => copyToClipboard(wallet.privateKey, 'privateKey')}
                       className="p-3 bg-blue-600 hover:bg-blue-700 text-white rounded-xl transition-colors flex items-center gap-2"
                       disabled={!showPrivateKey}
+                      title="Copy private key"
                     >
                       {copied === 'privateKey' ? (
                         <CheckCircle size={16} />
@@ -321,6 +373,83 @@ const ManageWallet: React.FC = () => {
           )}
         </motion.div>
       </div>
+
+      {/* Decrypt Password Modal */}
+      {showDecryptModal && (
+        <motion.div
+          className="fixed inset-0 bg-black/80 backdrop-blur-sm flex items-center justify-center p-4 z-50"
+          initial={{ opacity: 0 }}
+          animate={{ opacity: 1 }}
+          exit={{ opacity: 0 }}
+          onClick={() => setShowDecryptModal(false)}
+        >
+          <motion.div
+            className="glass-premium rounded-xl p-8 border border-white/10 max-w-md w-full"
+            initial={{ scale: 0.9, opacity: 0 }}
+            animate={{ scale: 1, opacity: 1 }}
+            onClick={(e) => e.stopPropagation()}
+          >
+            <div className="text-center mb-6">
+              <div className="w-12 h-12 bg-yellow-500 rounded-full flex items-center justify-center mx-auto mb-4">
+                <Shield size={24} className="text-white" />
+              </div>
+              <h3 className="text-xl font-bold text-white mb-2">Decrypt Private Key</h3>
+              <p className="text-sm text-gray-400">
+                Enter your password to decrypt and view your private key
+              </p>
+            </div>
+
+            <div className="space-y-4">
+              <div>
+                <label className="block text-sm font-medium text-gray-300 mb-2">
+                  Password
+                </label>
+                <input
+                  type="password"
+                  value={decryptPassword}
+                  onChange={(e) => setDecryptPassword(e.target.value)}
+                  className="w-full p-3 bg-black/40 border border-gray-600/50 rounded-xl text-white placeholder-gray-400 focus:border-blue-400 focus:outline-none transition-colors"
+                  placeholder="Enter your password"
+                  onKeyPress={(e) => e.key === 'Enter' && handleDecryptWallet()}
+                />
+              </div>
+
+              {decryptError && (
+                <div className="bg-red-500/10 border border-red-500/30 rounded-lg p-3">
+                  <p className="text-red-400 text-sm">{decryptError}</p>
+                </div>
+              )}
+
+              <div className="flex gap-3">
+                <button
+                  onClick={() => {
+                    setShowDecryptModal(false);
+                    setDecryptPassword('');
+                    setDecryptError('');
+                  }}
+                  className="flex-1 py-3 px-4 bg-gray-600 hover:bg-gray-700 text-white rounded-xl transition-colors"
+                >
+                  Cancel
+                </button>
+                <button
+                  onClick={handleDecryptWallet}
+                  disabled={isDecrypting || !decryptPassword}
+                  className="flex-1 py-3 px-4 bg-blue-600 hover:bg-blue-700 text-white rounded-xl transition-colors disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2"
+                >
+                  {isDecrypting ? (
+                    <>
+                      <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white"></div>
+                      <span>Decrypting...</span>
+                    </>
+                  ) : (
+                    'Decrypt & View'
+                  )}
+                </button>
+              </div>
+            </div>
+          </motion.div>
+        </motion.div>
+      )}
 
       {/* QR Code Modal */}
       {showQRCode && (

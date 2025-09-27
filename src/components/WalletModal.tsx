@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { X, Mail, Wallet, Shield, CheckCircle } from 'lucide-react';
+import { X, Mail, Wallet, Shield, CheckCircle, Eye, EyeOff, Copy } from 'lucide-react';
 import { useAuth } from '../contexts/AuthContext';
 import { generateWallet, encryptPrivateKey } from '../lib/wallet';
 import { supabase } from '../lib/supabase';
@@ -17,6 +17,7 @@ const WalletModal: React.FC<WalletModalProps> = ({ isOpen, onClose }) => {
   const [password, setPassword] = useState('');
   const [walletAddress, setWalletAddress] = useState('');
   const [privateKey, setPrivateKey] = useState('');
+  const [showPrivateKey, setShowPrivateKey] = useState(false);
   const [error, setError] = useState('');
 
   useEffect(() => {
@@ -261,14 +262,34 @@ const WalletModal: React.FC<WalletModalProps> = ({ isOpen, onClose }) => {
                     <label className="block text-sm font-medium text-gray-300 mb-2">
                       Private Key (Keep this secure!)
                     </label>
-                    <div className="bg-gray-800 p-3 rounded-lg border border-red-500/30">
-                      <p className="text-red-400 text-sm font-mono break-all">{privateKey}</p>
-                      <button
-                        onClick={() => copyToClipboard(privateKey)}
-                        className="text-xs text-gray-400 hover:text-red-400 mt-1"
-                      >
-                        Click to copy
-                      </button>
+                    <div className="bg-gray-800 border border-red-500/30 rounded-lg overflow-hidden">
+                      <div className="p-3">
+                        <p className="text-red-400 text-sm font-mono break-all">
+                          {showPrivateKey ? privateKey : '•'.repeat(64)}
+                        </p>
+                      </div>
+                      <div className="bg-gray-900/50 px-3 py-2 border-t border-gray-700 flex items-center justify-between">
+                        <div className="flex gap-2">
+                          <button
+                            onClick={() => setShowPrivateKey(!showPrivateKey)}
+                            className="flex items-center gap-1 text-xs text-gray-400 hover:text-red-400 transition-colors"
+                          >
+                            {showPrivateKey ? <EyeOff size={12} /> : <Eye size={12} />}
+                            {showPrivateKey ? 'Hide' : 'Show'}
+                          </button>
+                          <button
+                            onClick={() => copyToClipboard(privateKey)}
+                            className="flex items-center gap-1 text-xs text-gray-400 hover:text-red-400 transition-colors"
+                            disabled={!showPrivateKey}
+                          >
+                            <Copy size={12} />
+                            Copy
+                          </button>
+                        </div>
+                        <span className="text-xs text-red-400">
+                          🔒 Keep secure
+                        </span>
+                      </div>
                     </div>
                   </div>
 
