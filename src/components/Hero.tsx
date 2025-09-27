@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { motion } from 'framer-motion';
-import { ChevronRight, Zap, TrendingUp, Shield } from 'lucide-react';
+import { ChevronDown, ChevronRight, ArrowDown, Brain, MessageCircle, DollarSign } from 'lucide-react';
 
 interface HeroProps {
   onConnectWallet: () => void;
@@ -10,7 +10,7 @@ interface HeroProps {
 const Hero: React.FC<HeroProps> = ({ onConnectWallet, onLearnMore }) => {
   const [currentText, setCurrentText] = useState('');
   const [isTypingComplete, setIsTypingComplete] = useState(false);
-  const fullText = 'Welcome To Eth AI';
+  const fullText = 'AI Trading Agent';
 
   useEffect(() => {
     let index = 0;
@@ -22,42 +22,213 @@ const Hero: React.FC<HeroProps> = ({ onConnectWallet, onLearnMore }) => {
         setIsTypingComplete(true);
         clearInterval(timer);
       }
-    }, 150);
+    }, 120);
 
     return () => clearInterval(timer);
   }, []);
 
+  // ETH Logo SVG component
+  const EthLogo = () => (
+    <motion.svg
+      width="200"
+      height="200"
+      viewBox="0 0 256 417"
+      className="absolute opacity-20"
+      initial={{ opacity: 0, scale: 0.8, rotate: -15 }}
+      animate={{ 
+        opacity: [0.1, 0.3, 0.1],
+        scale: [0.8, 1.1, 0.8],
+        rotate: [-15, 15, -15]
+      }}
+      transition={{
+        duration: 12,
+        repeat: Infinity,
+        ease: "easeInOut"
+      }}
+    >
+      <defs>
+        <linearGradient id="ethGradient" x1="0%" y1="0%" x2="100%" y2="100%">
+          <stop offset="0%" stopColor="#627EEA" stopOpacity="0.9" />
+          <stop offset="30%" stopColor="#8A92F7" stopOpacity="1" />
+          <stop offset="70%" stopColor="#A855F7" stopOpacity="1" />
+          <stop offset="100%" stopColor="#627EEA" stopOpacity="0.8" />
+        </linearGradient>
+        <filter id="ethGlow" x="-50%" y="-50%" width="200%" height="200%">
+          <feGaussianBlur stdDeviation="8" result="coloredBlur"/>
+          <feMerge> 
+            <feMergeNode in="coloredBlur"/>
+            <feMergeNode in="SourceGraphic"/>
+          </feMerge>
+        </filter>
+        <radialGradient id="shine" cx="30%" cy="30%" r="70%">
+          <stop offset="0%" stopColor="rgba(255,255,255,0.4)" />
+          <stop offset="70%" stopColor="rgba(255,255,255,0.1)" />
+          <stop offset="100%" stopColor="rgba(255,255,255,0)" />
+        </radialGradient>
+      </defs>
+      <motion.g
+        filter="url(#ethGlow)"
+        animate={{
+          filter: [
+            "drop-shadow(0 0 10px rgba(98, 126, 234, 0.6))",
+            "drop-shadow(0 0 30px rgba(168, 85, 247, 0.8))",
+            "drop-shadow(0 0 20px rgba(138, 146, 247, 0.7))",
+            "drop-shadow(0 0 10px rgba(98, 126, 234, 0.6))"
+          ]
+        }}
+        transition={{ duration: 6, repeat: Infinity, ease: "easeInOut" }}
+      >
+        <path
+          d="M127.961 0l-2.795 9.5v275.668l2.795 2.79 127.962-75.638z"
+          fill="url(#ethGradient)"
+        />
+        <path
+          d="M127.962 0L0 212.32l127.962 75.639V154.158z"
+          fill="url(#ethGradient)"
+          fillOpacity="0.7"
+        />
+        <path
+          d="M127.961 312.187l-1.575 1.92v98.199l1.575 4.6L256 236.587z"
+          fill="url(#ethGradient)"
+        />
+        <path
+          d="M127.962 416.905v-104.72L0 236.585z"
+          fill="url(#ethGradient)"
+          fillOpacity="0.7"
+        />
+        <path
+          d="M127.961 287.958l127.96-75.637-127.96-58.162z"
+          fill="url(#ethGradient)"
+          fillOpacity="0.4"
+        />
+        <path
+          d="M0 212.32l127.96 75.638v-133.8z"
+          fill="url(#ethGradient)"
+          fillOpacity="0.6"
+        />
+        {/* Shine overlay */}
+        <ellipse
+          cx="128"
+          cy="150"
+          rx="100"
+          ry="120"
+          fill="url(#shine)"
+          opacity="0.8"
+        />
+      </motion.g>
+    </motion.svg>
+  );
+
   const fadeInUp = {
     initial: { opacity: 0, y: 60 },
     animate: { opacity: 1, y: 0 },
-    transition: { duration: 0.8 }
+    transition: { duration: 0.8, ease: [0.4, 0, 0.2, 1] }
   };
 
   const stagger = {
     animate: {
       transition: {
-        staggerChildren: 0.2
+        staggerChildren: 0.15
       }
     }
   };
 
   return (
-    <section id="home" className="min-h-screen flex items-center justify-center relative overflow-hidden">
-      {/* Professional Dark Background */}
-      <div className="absolute inset-0 bg-gradient-to-br from-slate-900 via-gray-900 to-black">
-        <div className="absolute inset-0 bg-[radial-gradient(circle_at_30%_20%,_rgba(59,130,246,0.1)_0%,_transparent_50%)]"></div>
-        <div className="absolute inset-0 bg-[radial-gradient(circle_at_70%_80%,_rgba(6,182,212,0.08)_0%,_transparent_50%)]"></div>
+    <section id="home" className="min-h-screen flex items-center justify-center relative overflow-hidden pt-20">
+      {/* Premium Dark Background with Sophisticated Gradients */}
+      <div className="absolute inset-0 bg-premium-mesh">
+        {/* Layered gradient backgrounds for depth */}
+        <div className="absolute inset-0 bg-[radial-gradient(circle_at_20%_20%,_rgba(37,99,235,0.15)_0%,_transparent_50%)]"></div>
+        <div className="absolute inset-0 bg-[radial-gradient(circle_at_80%_80%,_rgba(6,182,212,0.12)_0%,_transparent_50%)]"></div>
+        <div className="absolute inset-0 bg-[radial-gradient(circle_at_40%_60%,_rgba(16,185,129,0.08)_0%,_transparent_40%)]"></div>
+        
+        
+        {/* Large Static ETH Logo in Center */}
+        <div className="absolute top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2 opacity-15">
+          <svg
+            width="400"
+            height="400"
+            viewBox="0 0 256 417"
+            className="static-eth-logo"
+          >
+            <defs>
+              <linearGradient id="centerEthGradient" x1="0%" y1="0%" x2="100%" y2="100%">
+                <stop offset="0%" stopColor="#627EEA" stopOpacity="0.3" />
+                <stop offset="30%" stopColor="#8A92F7" stopOpacity="0.4" />
+                <stop offset="70%" stopColor="#A855F7" stopOpacity="0.4" />
+                <stop offset="100%" stopColor="#627EEA" stopOpacity="0.3" />
+              </linearGradient>
+              <filter id="centerGlow" x="-50%" y="-50%" width="200%" height="200%">
+                <feGaussianBlur stdDeviation="6" result="coloredBlur"/>
+                <feMerge> 
+                  <feMergeNode in="coloredBlur"/>
+                  <feMergeNode in="SourceGraphic"/>
+                </feMerge>
+              </filter>
+            </defs>
+            <g filter="url(#centerGlow)">
+              <path
+                d="M127.961 0l-2.795 9.5v275.668l2.795 2.79 127.962-75.638z"
+                fill="url(#centerEthGradient)"
+              />
+              <path
+                d="M127.962 0L0 212.32l127.962 75.639V154.158z"
+                fill="url(#centerEthGradient)"
+                fillOpacity="0.8"
+              />
+              <path
+                d="M127.961 312.187l-1.575 1.92v98.199l1.575 4.6L256 236.587z"
+                fill="url(#centerEthGradient)"
+              />
+              <path
+                d="M127.962 416.905v-104.72L0 236.585z"
+                fill="url(#centerEthGradient)"
+                fillOpacity="0.8"
+              />
+              <path
+                d="M127.961 287.958l127.96-75.637-127.96-58.162z"
+                fill="url(#centerEthGradient)"
+                fillOpacity="0.5"
+              />
+              <path
+                d="M0 212.32l127.96 75.638v-133.8z"
+                fill="url(#centerEthGradient)"
+                fillOpacity="0.7"
+              />
+            </g>
+          </svg>
+        </div>
       </div>
 
-      {/* Subtle Grid Pattern */}
-      <div className="absolute inset-0 opacity-20">
-        <div className="absolute inset-0" style={{
-          backgroundImage: `
-            linear-gradient(rgba(59, 130, 246, 0.1) 1px, transparent 1px),
-            linear-gradient(90deg, rgba(59, 130, 246, 0.1) 1px, transparent 1px)
-          `,
-          backgroundSize: '60px 60px'
-        }}></div>
+      {/* Premium Grid Pattern */}
+      <div className="absolute inset-0 bg-premium-grid opacity-30"></div>
+
+      {/* Floating geometric elements */}
+      <div className="absolute inset-0 overflow-hidden pointer-events-none">
+        {[...Array(12)].map((_, i) => (
+          <motion.div
+            key={i}
+            className="absolute"
+            style={{
+              left: `${10 + (i * 8) % 80}%`,
+              top: `${20 + (i * 12) % 60}%`,
+              width: `${8 + (i % 3) * 4}px`,
+              height: `${8 + (i % 3) * 4}px`,
+            }}
+            animate={{
+              y: [-20, 20, -20],
+              opacity: [0.1, 0.3, 0.1],
+            }}
+            transition={{
+              duration: 8 + (i % 4),
+              repeat: Infinity,
+              delay: i * 0.3,
+              ease: "easeInOut"
+            }}
+          >
+            <div className="w-full h-full bg-gradient-to-br from-blue-500/20 to-cyan-500/20 rounded-lg backdrop-blur-sm"></div>
+          </motion.div>
+        ))}
       </div>
 
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 text-center z-10">
@@ -67,91 +238,106 @@ const Hero: React.FC<HeroProps> = ({ onConnectWallet, onLearnMore }) => {
           animate="animate"
           className="space-y-8"
         >
-          {/* Typing Animation Title */}
-          <motion.div className="space-y-4">
-            <h1 className="text-5xl md:text-7xl font-bold text-white leading-tight">
-              <span className="text-transparent bg-clip-text bg-gradient-to-r from-blue-400 to-cyan-400">
-                {currentText}
-              </span>
-              {!isTypingComplete && (
-                <motion.span 
-                  className="text-cyan-400"
-                  animate={{ opacity: [1, 0] }}
-                  transition={{ duration: 0.8, repeat: Infinity }}
-                >
-                  |
-                </motion.span>
-              )}
-            </h1>
-            
-            <motion.div 
-              className="w-32 h-1 bg-gradient-to-r from-blue-400 to-cyan-400 mx-auto rounded-full"
-              initial={{ width: 0 }}
-              animate={{ width: isTypingComplete ? 128 : 0 }}
-              transition={{ duration: 1, delay: 0.5 }}
-            />
-          </motion.div>
-
-          {/* Description */}
-          <motion.div
-            variants={fadeInUp}
-            className="space-y-6"
-          >
-            <p className="text-xl md:text-2xl text-gray-300 max-w-3xl mx-auto leading-relaxed">
-              Seamlessly swap your <span className="text-green-400 font-semibold">USDC</span> to{' '}
-              <span className="text-blue-400 font-semibold">Ethereum</span> with the power of AI-driven optimization
-            </p>
-            
-            <div className="flex flex-wrap justify-center gap-8 text-sm text-gray-400">
+          {/* Premium Typing Animation Title */}
+          <motion.div className="space-y-6">
+            <div className="space-y-4">
+              <h1 className="text-6xl md:text-8xl font-black text-white leading-[0.9] tracking-tight">
+                <span className="gradient-text-premium">
+                  {currentText}
+                </span>
+                {!isTypingComplete && (
+                  <motion.span 
+                    className="text-cyan-400 ml-1"
+                    animate={{ opacity: [1, 0] }}
+                    transition={{ duration: 0.8, repeat: Infinity }}
+                  >
+                    |
+                  </motion.span>
+                )}
+              </h1>
+              
+              {/* Premium animated underline */}
               <motion.div 
-                className="flex items-center gap-2 bg-white/5 backdrop-blur-sm px-4 py-2 rounded-full border border-white/10"
-                whileHover={{ scale: 1.05, backgroundColor: "rgba(255,255,255,0.08)" }}
-                transition={{ type: "spring", stiffness: 400 }}
+                className="flex justify-center"
+                variants={fadeInUp}
               >
-                <Zap className="text-yellow-400" size={18} />
-                <span>Lightning Fast</span>
-              </motion.div>
-              <motion.div 
-                className="flex items-center gap-2 bg-white/5 backdrop-blur-sm px-4 py-2 rounded-full border border-white/10"
-                whileHover={{ scale: 1.05, backgroundColor: "rgba(255,255,255,0.08)" }}
-                transition={{ type: "spring", stiffness: 400 }}
-              >
-                <TrendingUp className="text-green-400" size={18} />
-                <span>Best Rates</span>
-              </motion.div>
-              <motion.div 
-                className="flex items-center gap-2 bg-white/5 backdrop-blur-sm px-4 py-2 rounded-full border border-white/10"
-                whileHover={{ scale: 1.05, backgroundColor: "rgba(255,255,255,0.08)" }}
-                transition={{ type: "spring", stiffness: 400 }}
-              >
-                <div className="w-5 h-5 bg-gradient-to-r from-blue-400 to-cyan-400 rounded-full flex items-center justify-center">
-                  <span className="text-xs font-bold text-white">Ξ</span>
-                </div>
-                <span>Ethereum Powered</span>
+                <motion.div 
+                  className="h-1.5 bg-brand-gradient rounded-full"
+                  initial={{ width: 0 }}
+                  animate={{ width: isTypingComplete ? 200 : 0 }}
+                  transition={{ duration: 1.2, delay: 0.5, ease: [0.4, 0, 0.2, 1] }}
+                />
               </motion.div>
             </div>
           </motion.div>
 
-          {/* Action Buttons */}
+          {/* Enhanced Description */}
           <motion.div
             variants={fadeInUp}
-            className="flex flex-col sm:flex-row gap-4 justify-center items-center pt-8"
+            className="space-y-8"
+          >
+            <div className="max-w-4xl mx-auto space-y-6">
+              <p className="text-2xl md:text-3xl text-gray-200 leading-relaxed font-light">
+                Your intelligent companion for <span className="text-blue-400 font-semibold">multi-chain trading</span>{' '}
+                across <span className="text-purple-400 font-semibold">Polygon, Ethereum, Arbitrum & Base</span>
+              </p>
+              
+              <p className="text-lg md:text-xl text-gray-400 leading-relaxed max-w-3xl mx-auto">
+                "Swap 10 USDC to ETH" → AI executes instantly. "What's ETH price?" → Get real-time data from Pyth Oracle.
+                Smart wallet management with secure fund control.
+              </p>
+            </div>
+            
+            {/* AI Agent feature badges */}
+            <div className="flex flex-wrap justify-center gap-4 text-sm">
+              {[
+                { icon: Brain, label: 'AI-Powered Commands', color: 'purple' },
+                { icon: MessageCircle, label: 'Natural Language', color: 'blue' },
+                { icon: DollarSign, label: 'Price Discovery', color: 'green' },
+              ].map(({ icon: Icon, label, color }, index) => (
+                <motion.div
+                  key={label}
+                  className="glass-premium px-5 py-3 rounded-2xl border border-white/10 hover:border-white/20 transition-all duration-300 cursor-default group"
+                  whileHover={{ scale: 1.05, y: -2 }}
+                  initial={{ opacity: 0, y: 20 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  transition={{ delay: 0.8 + index * 0.1 }}
+                >
+                  <div className="flex items-center gap-2.5">
+                    <Icon 
+                      className={`${
+                        color === 'purple' ? 'text-purple-400' :
+                        color === 'blue' ? 'text-blue-400' : 'text-green-400'
+                      } group-hover:scale-110 transition-transform duration-300`} 
+                      size={18} 
+                    />
+                    <span className="font-medium text-gray-200">{label}</span>
+                  </div>
+                </motion.div>
+              ))}
+            </div>
+          </motion.div>
+
+          {/* Premium Action Buttons */}
+          <motion.div
+            variants={fadeInUp}
+            className="flex flex-col sm:flex-row gap-6 justify-center items-center pt-8"
           >
             <motion.button
               onClick={onConnectWallet}
-              className="bg-gradient-to-r from-blue-500 to-cyan-500 text-white px-8 py-4 rounded-xl text-lg font-semibold hover:from-blue-600 hover:to-cyan-600 transition-all duration-300 shadow-xl shadow-blue-500/25 flex items-center gap-3 group border border-white/10 backdrop-blur-sm"
+              className="bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-500 hover:to-purple-500 px-10 py-4 text-lg font-semibold rounded-2xl flex items-center gap-3 group shadow-2xl border border-blue-400/20 hover:border-blue-400/40 transition-all duration-300"
               whileHover={{ 
                 scale: 1.02, 
-                boxShadow: "0 20px 40px rgba(59, 130, 246, 0.4)",
-                y: -2
+                y: -3,
+                boxShadow: "0 0 40px rgba(59, 130, 246, 0.4)"
               }}
               whileTap={{ scale: 0.98 }}
             >
-              <svg width="20" height="20" viewBox="0 0 24 24" fill="currentColor" className="group-hover:rotate-12 transition-transform duration-300">
-                <path d="M21 18v1a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2v1"/>
-                <polyline points="15,10 21,4 15,4 15,10"/>
-              </svg>
-              Connect Wallet
+              <Brain 
+                size={20} 
+                className="group-hover:rotate-12 transition-transform duration-300 text-cyan-300"
+              />
+              <span>Start AI Trading</span>
               <ChevronRight 
                 size={20} 
                 className="group-hover:translate-x-1 transition-transform duration-300"
@@ -160,67 +346,61 @@ const Hero: React.FC<HeroProps> = ({ onConnectWallet, onLearnMore }) => {
 
             <motion.button
               onClick={onLearnMore}
-              className="border border-gray-600 text-gray-300 px-8 py-4 rounded-xl text-lg font-semibold hover:border-cyan-400 hover:text-cyan-400 hover:bg-cyan-400/5 transition-all duration-300 flex items-center gap-3 group backdrop-blur-sm"
+              className="btn-outline-premium px-10 py-4 text-lg font-semibold rounded-2xl flex items-center gap-3 group"
               whileHover={{ scale: 1.02, y: -2 }}
               whileTap={{ scale: 0.98 }}
             >
-              <svg width="20" height="20" viewBox="0 0 24 24" fill="currentColor" className="group-hover:rotate-12 transition-transform duration-300">
-                <circle cx="12" cy="12" r="10"/>
-                <path d="M9.09 9a3 3 0 0 1 5.83 1c0 2-3 3-3 3"/>
-                <path d="M12 17h.01"/>
-              </svg>
-              Learn More
+              <div className="w-5 h-5 rounded-full border-2 border-current flex items-center justify-center">
+                <div className="w-1.5 h-1.5 bg-current rounded-full group-hover:scale-125 transition-transform duration-300"></div>
+              </div>
+              <span>Learn More</span>
             </motion.button>
           </motion.div>
 
-          {/* Floating CTA Elements */}
+          {/* Statistics or Key Numbers */}
           <motion.div
-            className="absolute bottom-10 left-1/2 transform -translate-x-1/2"
+            variants={fadeInUp}
+            className="pt-16 grid grid-cols-1 md:grid-cols-3 gap-8 max-w-4xl mx-auto"
+          >
+            {[
+              { number: '4 Chains', label: 'Multi-Chain Support', gradient: 'from-blue-400 to-cyan-400' },
+              { number: '24/7', label: 'AI Agent Active', gradient: 'from-purple-400 to-pink-400' },
+              { number: 'Real-time', label: 'Pyth Price Feeds', gradient: 'from-green-400 to-emerald-400' },
+            ].map(({ number, label, gradient }, index) => (
+              <motion.div
+                key={label}
+                className="glass-subtle p-6 rounded-2xl text-center group hover:glass-premium transition-all duration-300"
+                initial={{ opacity: 0, y: 20 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ delay: 1.2 + index * 0.1 }}
+                whileHover={{ y: -4 }}
+              >
+                <div className={`text-3xl md:text-4xl font-bold bg-gradient-to-r ${gradient} bg-clip-text text-transparent mb-2`}>
+                  {number}
+                </div>
+                <div className="text-gray-400 font-medium">{label}</div>
+              </motion.div>
+            ))}
+          </motion.div>
+
+          {/* Floating Scroll Indicator */}
+          <motion.div
+            className="absolute bottom-8 left-1/2 transform -translate-x-1/2"
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 1, delay: 2 }}
+            transition={{ duration: 1, delay: 2.5 }}
           >
-            <div className="flex flex-col items-center gap-2">
-              <span className="text-xs text-gray-400 font-medium">Explore Features</span>
+            <div className="flex flex-col items-center gap-3">
+              <span className="text-xs text-gray-500 font-medium uppercase tracking-wider">Explore Features</span>
               <motion.div
                 animate={{ y: [0, 8, 0] }}
                 transition={{ duration: 2, repeat: Infinity, ease: "easeInOut" }}
-                className="w-8 h-8 border border-gray-600 rounded-full flex items-center justify-center"
+                className="w-8 h-8 border border-gray-600 rounded-full flex items-center justify-center hover:border-cyan-400 transition-colors duration-300 cursor-pointer"
               >
-                <motion.div
-                  animate={{ scale: [1, 1.2, 1] }}
-                  transition={{ duration: 2, repeat: Infinity, ease: "easeInOut" }}
-                >
-                  <ChevronRight className="w-4 h-4 text-cyan-400 rotate-90" />
-                </motion.div>
+                <ArrowDown className="w-4 h-4 text-cyan-400" />
               </motion.div>
             </div>
           </motion.div>
-
-          {/* Floating Elements */}
-          <div className="absolute inset-0 overflow-hidden pointer-events-none">
-            {[...Array(6)].map((_, i) => (
-              <motion.div
-                key={i}
-                className="absolute w-2 h-2 bg-gradient-to-r from-blue-400 to-cyan-400 rounded-full"
-                style={{
-                  left: `${20 + i * 15}%`,
-                  top: `${30 + (i % 3) * 20}%`,
-                }}
-                animate={{
-                  y: [-20, 20, -20],
-                  opacity: [0.3, 0.8, 0.3],
-                  scale: [1, 1.5, 1],
-                }}
-                transition={{
-                  duration: 4 + i * 0.5,
-                  repeat: Infinity,
-                  delay: i * 0.8,
-                  ease: "easeInOut"
-                }}
-              />
-            ))}
-          </div>
         </motion.div>
       </div>
     </section>

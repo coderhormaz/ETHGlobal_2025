@@ -163,8 +163,8 @@ const WalletModal: React.FC<WalletModalProps> = ({ isOpen, onClose }) => {
             >
               <motion.div 
                 className="w-16 h-16 bg-gradient-to-r from-blue-500 to-purple-600 rounded-full flex items-center justify-center mx-auto mb-4"
-                animate={{ rotate: 360 }}
-                transition={{ duration: 2, repeat: Infinity, ease: "linear" }}
+                whileHover={{ scale: 1.1 }}
+                transition={{ duration: 0.3, ease: "easeOut" }}
               >
                 <Wallet className="w-8 h-8 text-white" />
               </motion.div>
