@@ -206,13 +206,47 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
       }
 
       if (walletData) {
-        // Decrypt and restore wallet
-        const restoredWallet = restoreWallet(walletData.encrypted_private_key, password);
-        setWallet(restoredWallet);
-        return restoredWallet;
+        try {
+          // Decrypt and restore wallet
+          const restoredWallet = restoreWallet(walletData.encrypted_private_key, password);
+          setWallet(restoredWallet);
+          return restoredWallet;
+        } catch (decryptError) {
+          console.error('Wallet decryption error:', decryptError);
+          // If decryption fails, it could be due to corrupted data or wrong password
+          if (decryptError instanceof Error && decryptError.message.includes('Malformed UTF-8')) {
+            throw new Error('Wallet data appears to be corrupted. Please create a new wallet.');
+          } else {
+            throw new Error('Invalid password or corrupted wallet data.');
+          }
+        }
+      } else {
+        throw new Error('No wallet found for this user');
       }
     } catch (error) {
       console.error('Load wallet error:', error);
+      throw error;
+    }
+  };
+
+  const deleteWallet = async (): Promise<void> => {
+    try {
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user) throw new Error('User not authenticated');
+
+      const { error } = await supabase
+        .from('user_wallets')
+        .delete()
+        .eq('user_id', user.id);
+
+      if (error) {
+        console.error('Error deleting wallet:', error);
+        throw new Error('Failed to delete wallet');
+      }
+
+      setWallet(null);
+    } catch (error) {
+      console.error('Delete wallet error:', error);
       throw error;
     }
   };
@@ -240,6 +274,7 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
     signIn,
     signOut,
     loadWallet,
+    deleteWallet,
   };
 
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;
