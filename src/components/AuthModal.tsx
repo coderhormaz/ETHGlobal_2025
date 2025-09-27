@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { X, Mail, Lock, User, Eye, EyeOff, CheckCircle, ArrowRight, Shield, Sparkles } from 'lucide-react';
+import { X, Mail, Lock, User, Eye, EyeOff, ArrowRight } from 'lucide-react';
+import { useAuth } from '../contexts/AuthContext';
 
 interface AuthModalProps {
   isOpen: boolean;
@@ -20,6 +21,41 @@ const AuthModal: React.FC<AuthModalProps> = ({ isOpen, onClose, defaultMode = 'l
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
   const [errors, setErrors] = useState<{[key: string]: string}>({});
+
+  const { signUp, signIn, user } = useAuth();
+
+  // Close modal when user is authenticated and redirect to dashboard
+  useEffect(() => {
+    if (user && isOpen) {
+      onClose();
+      // Redirect to dashboard
+      window.location.href = '/dashboard';
+    }
+  }, [user, isOpen, onClose]);
+
+  // Prevent background scrolling when modal is open
+  useEffect(() => {
+    if (isOpen) {
+      document.body.style.overflow = 'hidden';
+      return () => {
+        document.body.style.overflow = 'unset';
+      };
+    }
+  }, [isOpen]);
+
+  // Handle escape key
+  useEffect(() => {
+    const handleEscape = (event: KeyboardEvent) => {
+      if (event.key === 'Escape') {
+        onClose();
+      }
+    };
+
+    if (isOpen) {
+      document.addEventListener('keydown', handleEscape);
+      return () => document.removeEventListener('keydown', handleEscape);
+    }
+  }, [isOpen, onClose]);
 
   // Scroll lock and keyboard event handling
   useEffect(() => {
@@ -86,6 +122,7 @@ const AuthModal: React.FC<AuthModalProps> = ({ isOpen, onClose, defaultMode = 'l
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setIsLoading(true);
+    setErrors({});
     
     const newErrors: {[key: string]: string} = {};
     
@@ -113,11 +150,24 @@ const AuthModal: React.FC<AuthModalProps> = ({ isOpen, onClose, defaultMode = 'l
       return;
     }
     
-    // Simulate API call
-    await new Promise(resolve => setTimeout(resolve, 1500));
-    
-    setIsLoading(false);
-    onClose();
+    try {
+      if (mode === 'signup') {
+        await signUp(formData.email, formData.password, formData.name);
+      } else {
+        await signIn(formData.email, formData.password);
+      }
+      
+      // Reset form
+      setFormData({ email: '', password: '', confirmPassword: '', name: '' });
+      
+    } catch (error: any) {
+      console.error('Authentication error:', error);
+      setErrors({ 
+        general: error.message || 'An error occurred during authentication' 
+      });
+    } finally {
+      setIsLoading(false);
+    }
   };
 
   return (
@@ -225,6 +275,17 @@ const AuthModal: React.FC<AuthModalProps> = ({ isOpen, onClose, defaultMode = 'l
 
             {/* Form */}
             <div className="px-8 pb-8">
+              {/* General Error */}
+              {errors.general && (
+                <motion.div
+                  className="mb-4 p-3 bg-red-500/10 border border-red-500/20 rounded-xl"
+                  initial={{ opacity: 0, y: -10 }}
+                  animate={{ opacity: 1, y: 0 }}
+                >
+                  <p className="text-red-400 text-sm">{errors.general}</p>
+                </motion.div>
+              )}
+
               <form onSubmit={handleSubmit} className="space-y-6">
                 {mode === 'signup' && (
                   <motion.div
@@ -378,38 +439,15 @@ const AuthModal: React.FC<AuthModalProps> = ({ isOpen, onClose, defaultMode = 'l
                 </motion.button>
               </form>
 
-              {/* Enhanced Terms and Features */}
+              {/* Terms */}
               {mode === 'signup' && (
                 <motion.div
-                  className="mt-6 space-y-4"
+                  className="mt-6 text-center"
                   initial={{ opacity: 0 }}
                   animate={{ opacity: 1 }}
-                  transition={{ delay: 0.8 }}
+                  transition={{ delay: 0.6 }}
                 >
-                  {/* Features List */}
-                  <div className="bg-black/20 rounded-xl p-4 border border-white/5">
-                    <h4 className="text-sm font-medium text-white mb-3 flex items-center gap-2">
-                      <Sparkles size={16} className="text-blue-400" />
-                      What you get with EthAI
-                    </h4>
-                    <div className="space-y-2 text-xs text-gray-400">
-                      <div className="flex items-center gap-2">
-                        <CheckCircle size={14} className="text-green-400" />
-                        <span>AI-powered trading strategies</span>
-                      </div>
-                      <div className="flex items-center gap-2">
-                        <CheckCircle size={14} className="text-green-400" />
-                        <span>Real-time market analysis</span>
-                      </div>
-                      <div className="flex items-center gap-2">
-                        <CheckCircle size={14} className="text-green-400" />
-                        <span>Secure wallet integration</span>
-                      </div>
-                    </div>
-                  </div>
-
-                  {/* Terms */}
-                  <p className="text-xs text-gray-500 text-center leading-relaxed">
+                  <p className="text-xs text-gray-500 leading-relaxed">
                     By creating an account, you agree to our{' '}
                     <button className="text-blue-400 hover:text-blue-300 transition-colors underline">
                       Terms of Service

@@ -3,10 +3,9 @@ import { motion } from 'framer-motion';
 
 interface HeroProps {
   onConnectWallet: () => void;
-  onLearnMore: () => void;
 }
 
-const Hero: React.FC<HeroProps> = ({ onConnectWallet, onLearnMore }) => {
+const Hero: React.FC<HeroProps> = ({ onConnectWallet }) => {
   const [currentText, setCurrentText] = useState('');
   const [isTypingComplete, setIsTypingComplete] = useState(false);
   const [mousePosition, setMousePosition] = useState({ x: 0, y: 0 });

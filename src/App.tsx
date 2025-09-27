@@ -1,4 +1,5 @@
 import { useState, useEffect } from 'react';
+import { AuthProvider, useAuth } from './contexts/AuthContext';
 import Header from './components/Header';
 import Hero from './components/Hero';
 import About from './components/About';
@@ -10,16 +11,43 @@ import Footer from './components/Footer';
 import WalletModal from './components/WalletModalBeginner';
 import LearnMoreModal from './components/LearnMoreModal';
 import AuthModal from './components/AuthModal';
+import Dashboard from './components/Dashboard';
 import EthereumBackground from './components/EthereumBackground';
 import LoadingSpinner from './components/LoadingSpinner';
 import './App.css';
 
-function App() {
+// Main App Content (inside AuthProvider)
+const AppContent = () => {
   const [activeSection, setActiveSection] = useState('home');
   const [isWalletModalOpen, setIsWalletModalOpen] = useState(false);
   const [isLearnMoreModalOpen, setIsLearnMoreModalOpen] = useState(false);
   const [isAuthModalOpen, setIsAuthModalOpen] = useState(false);
   const [isLoading, setIsLoading] = useState(true);
+  
+  const { user } = useAuth();
+  
+  // Check if we should show dashboard based on URL
+  const [currentRoute, setCurrentRoute] = useState(
+    window.location.pathname === '/dashboard' ? 'dashboard' : 'landing'
+  );
+
+  // Handle URL changes
+  useEffect(() => {
+    const handlePopState = () => {
+      setCurrentRoute(window.location.pathname === '/dashboard' ? 'dashboard' : 'landing');
+    };
+    
+    window.addEventListener('popstate', handlePopState);
+    return () => window.removeEventListener('popstate', handlePopState);
+  }, []);
+
+  // Redirect authenticated users to dashboard if they try to access landing
+  useEffect(() => {
+    if (user && currentRoute === 'landing') {
+      window.history.pushState({}, '', '/dashboard');
+      setCurrentRoute('dashboard');
+    }
+  }, [user, currentRoute]);
 
   // Native smooth scrolling with intersection observer
   const scrollToSection = (sectionId: string) => {
@@ -67,13 +95,14 @@ function App() {
     return () => clearTimeout(timer);
   }, []);
 
-  const handleLearnMore = () => {
-    setIsLearnMoreModalOpen(true);
-  };
-
   const handleGetStarted = () => {
     setIsAuthModalOpen(true);
   };
+
+  // Show dashboard if user is authenticated and route is dashboard
+  if (user && currentRoute === 'dashboard') {
+    return <Dashboard />;
+  }
 
   // Show loading spinner if still loading
   if (isLoading) {
@@ -84,6 +113,7 @@ function App() {
     );
   }
 
+  // Show landing page
   return (
     <div className="min-h-screen bg-premium-mesh text-white relative overflow-hidden">
       {/* Premium Layered Background System */}
@@ -119,7 +149,6 @@ function App() {
           {/* Premium Hero Section */}
           <Hero
             onConnectWallet={handleGetStarted}
-            onLearnMore={handleLearnMore}
           />
 
           {/* Content sections with improved spacing */}
@@ -163,6 +192,15 @@ function App() {
         onClose={() => setIsLearnMoreModalOpen(false)}
       />
     </div>
+  );
+};
+
+// Main App component with AuthProvider
+function App() {
+  return (
+    <AuthProvider>
+      <AppContent />
+    </AuthProvider>
   );
 }
 

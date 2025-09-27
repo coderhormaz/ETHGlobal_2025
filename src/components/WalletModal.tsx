@@ -1,7 +1,9 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { X, Mail, Wallet, Shield, CheckCircle } from 'lucide-react';
-import { ethers } from 'ethers';
+import { useAuth } from '../contexts/AuthContext';
+import { generateWallet, encryptPrivateKey } from '../lib/wallet';
+import { supabase } from '../lib/supabase';
 
 interface WalletModalProps {
   isOpen: boolean;
@@ -9,43 +11,89 @@ interface WalletModalProps {
 }
 
 const WalletModal: React.FC<WalletModalProps> = ({ isOpen, onClose }) => {
+  const { user, wallet, loadWallet } = useAuth();
   const [step, setStep] = useState<'email' | 'creating' | 'success'>('email');
   const [email, setEmail] = useState('');
+  const [password, setPassword] = useState('');
   const [walletAddress, setWalletAddress] = useState('');
   const [privateKey, setPrivateKey] = useState('');
-  const [isValidEmail, setIsValidEmail] = useState(false);
+  const [error, setError] = useState('');
 
-  const validateEmail = (email: string) => {
-    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-    return emailRegex.test(email);
+  useEffect(() => {
+    if (user?.email) {
+      setEmail(user.email);
+      // Check if user already has a wallet
+      if (wallet) {
+        setWalletAddress(wallet.address);
+        setPrivateKey(wallet.privateKey);
+        setStep('success');
+      }
+    }
+  }, [user, wallet]);
+
+  const validatePassword = (password: string) => {
+    return password.length >= 6;
   };
 
-  const handleEmailChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const newEmail = e.target.value;
-    setEmail(newEmail);
-    setIsValidEmail(validateEmail(newEmail));
+  const handlePasswordChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const newPassword = e.target.value;
+    setPassword(newPassword);
   };
 
   const createWallet = async () => {
-    if (!isValidEmail) return;
+    if (!validatePassword(password) || !user) {
+      setError('Please enter a password (minimum 6 characters)');
+      return;
+    }
 
+    setError('');
     setStep('creating');
 
-    // Simulate wallet creation process
-    setTimeout(() => {
-      const wallet = ethers.Wallet.createRandom();
-      setWalletAddress(wallet.address);
-      setPrivateKey(wallet.privateKey);
+    try {
+      // Generate new wallet
+      const newWallet = generateWallet();
+      
+      // Encrypt private key with user's password
+      const encryptedPrivateKey = encryptPrivateKey(newWallet.privateKey, password);
+
+      // Store wallet in database
+      const { error: walletError } = await supabase
+        .from('user_wallets')
+        .upsert({
+          user_id: user.id,
+          wallet_address: newWallet.address,
+          encrypted_private_key: encryptedPrivateKey,
+        }, {
+          onConflict: 'user_id'
+        });
+
+      if (walletError) {
+        throw walletError;
+      }
+
+      // Update local state
+      setWalletAddress(newWallet.address);
+      setPrivateKey(newWallet.privateKey);
+      
+      // Load wallet into auth context
+      await loadWallet(password);
+      
       setStep('success');
-    }, 2000);
+    } catch (error: any) {
+      console.error('Error creating wallet:', error);
+      setError('Failed to create wallet. Please try again.');
+      setStep('email');
+    }
   };
 
   const handleClose = () => {
-    setStep('email');
-    setEmail('');
-    setWalletAddress('');
-    setPrivateKey('');
-    setIsValidEmail(false);
+    if (!wallet) {
+      setStep('email');
+      setPassword('');
+      setWalletAddress('');
+      setPrivateKey('');
+    }
+    setError('');
     onClose();
   };
 
@@ -92,8 +140,8 @@ const WalletModal: React.FC<WalletModalProps> = ({ isOpen, onClose }) => {
                   <div className="w-16 h-16 bg-gradient-to-r from-blue-500 to-cyan-500 rounded-full flex items-center justify-center mx-auto mb-4">
                     <Wallet className="text-white" size={32} />
                   </div>
-                  <h2 className="text-2xl font-bold text-white mb-2">Connect Your Wallet</h2>
-                  <p className="text-gray-400">Enter your email to create a new Web3 wallet</p>
+                  <h2 className="text-2xl font-bold text-white mb-2">Create Your Wallet</h2>
+                  <p className="text-gray-400">Secure your Web3 wallet with a password</p>
                 </div>
 
                 <div className="space-y-4">
@@ -106,12 +154,36 @@ const WalletModal: React.FC<WalletModalProps> = ({ isOpen, onClose }) => {
                       <input
                         type="email"
                         value={email}
-                        onChange={handleEmailChange}
-                        className="w-full pl-10 pr-4 py-3 bg-gray-800 border border-gray-600 rounded-lg text-white placeholder-gray-400 focus:border-cyan-400 focus:outline-none transition-colors"
-                        placeholder="Enter your email address"
+                        disabled
+                        className="w-full pl-10 pr-4 py-3 bg-gray-700 border border-gray-600 rounded-lg text-gray-300 cursor-not-allowed"
                       />
                     </div>
                   </div>
+
+                  <div>
+                    <label className="block text-sm font-medium text-gray-300 mb-2">
+                      Wallet Password
+                    </label>
+                    <div className="relative">
+                      <Shield className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400" size={20} />
+                      <input
+                        type="password"
+                        value={password}
+                        onChange={handlePasswordChange}
+                        className="w-full pl-10 pr-4 py-3 bg-gray-800 border border-gray-600 rounded-lg text-white placeholder-gray-400 focus:border-cyan-400 focus:outline-none transition-colors"
+                        placeholder="Enter a secure password"
+                      />
+                    </div>
+                    <p className="text-xs text-gray-400 mt-1">
+                      This password will be used to encrypt your private key
+                    </p>
+                  </div>
+
+                  {error && (
+                    <div className="bg-red-500/10 border border-red-500/30 rounded-lg p-3">
+                      <p className="text-red-400 text-sm">{error}</p>
+                    </div>
+                  )}
 
                   <div className="flex items-center gap-2 text-sm text-gray-400">
                     <Shield size={16} />
@@ -120,10 +192,10 @@ const WalletModal: React.FC<WalletModalProps> = ({ isOpen, onClose }) => {
 
                   <button
                     onClick={createWallet}
-                    disabled={!isValidEmail}
+                    disabled={!validatePassword(password)}
                     className="w-full bg-gradient-to-r from-blue-500 to-cyan-500 text-white py-3 rounded-lg font-medium hover:from-blue-600 hover:to-cyan-600 transition-all duration-200 disabled:opacity-50 disabled:cursor-not-allowed"
                   >
-                    Create Wallet
+                    {wallet ? 'Regenerate Wallet' : 'Create Wallet'}
                   </button>
                 </div>
               </motion.div>
@@ -158,8 +230,15 @@ const WalletModal: React.FC<WalletModalProps> = ({ isOpen, onClose }) => {
                   <div className="w-16 h-16 bg-green-500 rounded-full flex items-center justify-center mx-auto mb-4">
                     <CheckCircle className="text-white" size={32} />
                   </div>
-                  <h2 className="text-2xl font-bold text-white mb-2">Wallet Created!</h2>
-                  <p className="text-gray-400">Your Web3 wallet has been successfully created</p>
+                  <h2 className="text-2xl font-bold text-white mb-2">
+                    {wallet ? 'Wallet Ready!' : 'Wallet Created!'}
+                  </h2>
+                  <p className="text-gray-400">
+                    {wallet 
+                      ? 'Your Web3 wallet is ready to use'
+                      : 'Your Web3 wallet has been successfully created'
+                    }
+                  </p>
                 </div>
 
                 <div className="space-y-4">
@@ -203,7 +282,7 @@ const WalletModal: React.FC<WalletModalProps> = ({ isOpen, onClose }) => {
                     onClick={handleClose}
                     className="w-full bg-gradient-to-r from-green-500 to-emerald-500 text-white py-3 rounded-lg font-medium hover:from-green-600 hover:to-emerald-600 transition-all duration-200"
                   >
-                    Continue to Eth AI
+                    Continue to Dashboard
                   </button>
                 </div>
               </motion.div>
