@@ -5,10 +5,10 @@ import { Menu, X, Zap } from 'lucide-react';
 interface HeaderProps {
   activeSection: string;
   onNavigate: (section: string) => void;
-  onConnectWallet: () => void;
+  onGetStarted: () => void;
 }
 
-const Header: React.FC<HeaderProps> = ({ activeSection, onNavigate, onConnectWallet }) => {
+const Header: React.FC<HeaderProps> = ({ activeSection, onNavigate, onGetStarted }) => {
   const [isMenuOpen, setIsMenuOpen] = useState(false);
 
   const navItems = [
@@ -107,7 +107,7 @@ const Header: React.FC<HeaderProps> = ({ activeSection, onNavigate, onConnectWal
             
             {/* Premium CTA Button */}
             <motion.button
-              onClick={onConnectWallet}
+              onClick={onGetStarted}
               className="ml-6 btn-premium flex items-center gap-2.5 focus-ring"
               whileHover={{ 
                 scale: 1.02, 
@@ -174,7 +174,7 @@ const Header: React.FC<HeaderProps> = ({ activeSection, onNavigate, onConnectWal
               
               <motion.button
                 onClick={() => {
-                  onConnectWallet();
+                  onGetStarted();
                   setIsMenuOpen(false);
                 }}
                 className="btn-premium w-full justify-center mt-4 focus-ring"

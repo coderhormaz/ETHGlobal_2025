@@ -9,6 +9,7 @@ import Contact from './components/Contact';
 import Footer from './components/Footer';
 import WalletModal from './components/WalletModalBeginner';
 import LearnMoreModal from './components/LearnMoreModal';
+import AuthModal from './components/AuthModal';
 import EthereumBackground from './components/EthereumBackground';
 import LoadingSpinner from './components/LoadingSpinner';
 import './App.css';
@@ -17,6 +18,7 @@ function App() {
   const [activeSection, setActiveSection] = useState('home');
   const [isWalletModalOpen, setIsWalletModalOpen] = useState(false);
   const [isLearnMoreModalOpen, setIsLearnMoreModalOpen] = useState(false);
+  const [isAuthModalOpen, setIsAuthModalOpen] = useState(false);
   const [isLoading, setIsLoading] = useState(true);
 
   // Native smooth scrolling with intersection observer
@@ -65,12 +67,12 @@ function App() {
     return () => clearTimeout(timer);
   }, []);
 
-  const handleConnectWallet = () => {
-    setIsWalletModalOpen(true);
-  };
-
   const handleLearnMore = () => {
     setIsLearnMoreModalOpen(true);
+  };
+
+  const handleGetStarted = () => {
+    setIsAuthModalOpen(true);
   };
 
   // Show loading spinner if still loading
@@ -109,14 +111,14 @@ function App() {
         <Header
           activeSection={activeSection}
           onNavigate={scrollToSection}
-          onConnectWallet={handleConnectWallet}
+          onGetStarted={handleGetStarted}
         />
 
         {/* Main Content */}
         <main className="relative">
           {/* Premium Hero Section */}
           <Hero
-            onConnectWallet={handleConnectWallet}
+            onConnectWallet={handleGetStarted}
             onLearnMore={handleLearnMore}
           />
 
@@ -146,6 +148,11 @@ function App() {
       </div>
 
       {/* Premium Modals */}
+      <AuthModal
+        isOpen={isAuthModalOpen}
+        onClose={() => setIsAuthModalOpen(false)}
+      />
+
       <WalletModal
         isOpen={isWalletModalOpen}
         onClose={() => setIsWalletModalOpen(false)}
