@@ -160,7 +160,7 @@ const AIDemo: React.FC = () => {
       <motion.div
         initial={{ opacity: 0, scale: 0.9 }}
         animate={{ opacity: 1, scale: 1 }}
-        className="mt-4 p-4 rounded-2xl bg-gradient-to-r from-blue-900/20 to-purple-900/20 border border-blue-500/20"
+        className="mt-4 p-4 rounded-2xl border border-blue-500/20"
       >
         {action.type === 'swap' && (
           <div className="space-y-3">
@@ -298,7 +298,7 @@ const AIDemo: React.FC = () => {
               viewport={{ once: true }}
             >
               {/* Chat Header */}
-              <div className="flex items-center gap-3 p-6 border-b border-white/10 bg-gradient-to-r from-blue-900/20 to-purple-900/20">
+              <div className="flex items-center gap-3 p-6 border-b border-white/10">
                 <div className="w-10 h-10 rounded-full bg-gradient-to-r from-blue-500 to-purple-500 flex items-center justify-center">
                   <Bot size={20} className="text-white" />
                 </div>

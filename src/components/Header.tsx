@@ -66,12 +66,6 @@ const Header: React.FC<HeaderProps> = ({ activeSection, onNavigate, onConnectWal
             <div className="flex items-center">
               <span className="text-2xl font-bold text-white mr-1 tracking-tight">Eth</span>
               <span className="text-2xl font-bold gradient-text-premium tracking-tight">AI</span>
-              
-              {/* Status indicator */}
-              <div className="ml-3 flex items-center gap-1.5">
-                <div className="status-indicator online"></div>
-                <span className="text-xs font-medium text-gray-400 hidden sm:block">Live</span>
-              </div>
             </div>
           </motion.div>
 
@@ -125,7 +119,7 @@ const Header: React.FC<HeaderProps> = ({ activeSection, onNavigate, onConnectWal
               transition={{ delay: 0.4 }}
             >
               <Zap size={16} className="group-hover:rotate-12 transition-transform duration-300" />
-              <span className="font-semibold">Connect Wallet</span>
+              <span className="font-semibold">Get Started</span>
             </motion.button>
           </nav>
 
@@ -189,7 +183,7 @@ const Header: React.FC<HeaderProps> = ({ activeSection, onNavigate, onConnectWal
                 transition={{ delay: 0.3 }}
               >
                 <Zap size={16} />
-                Connect Wallet
+                Get Started
               </motion.button>
             </nav>
           </motion.div>

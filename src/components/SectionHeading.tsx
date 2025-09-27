@@ -54,25 +54,12 @@ const SectionHeading: React.FC<SectionHeadingProps> = ({
       
       {/* Animated Underline */}
       <motion.div 
-        className={`w-24 h-1 bg-gradient-to-r ${gradient} mx-auto rounded-full mb-8 relative`}
+        className={`w-24 h-1 bg-gradient-to-r ${gradient} mx-auto rounded-full mb-8`}
         initial={{ width: 0, opacity: 0 }}
         whileInView={{ width: 96, opacity: 1 }}
         viewport={{ once: true }}
         transition={{ duration: 1, delay: 0.8, ease: "easeOut" }}
-      >
-        <motion.div
-          className={`absolute -inset-1 bg-gradient-to-r ${gradient} rounded-full blur-sm opacity-50`}
-          animate={{ 
-            opacity: [0.5, 0.8, 0.5],
-            scale: [1, 1.1, 1]
-          }}
-          transition={{
-            duration: 2,
-            repeat: Infinity,
-            ease: "easeInOut"
-          }}
-        />
-      </motion.div>
+      />
       
       {subtitle && (
         <motion.p 
