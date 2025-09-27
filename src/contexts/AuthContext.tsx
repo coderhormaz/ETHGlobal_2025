@@ -161,8 +161,13 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
       if (error) throw error;
 
       if (data.user) {
-        // Load user's wallet
-        await loadWallet(password);
+        // Try to load user's wallet with the provided password
+        try {
+          await loadWallet(password);
+        } catch (walletError) {
+          // If wallet loading fails, user can still proceed but will need to enter password in wallet modal
+          console.log('Could not auto-load wallet, user will need to unlock it manually');
+        }
       }
     } catch (error: any) {
       console.error('Sign in error:', error);
