@@ -3,6 +3,7 @@ import { motion } from 'framer-motion';
 import { Coins, RefreshCw, TrendingUp, TrendingDown, DollarSign } from 'lucide-react';
 import { useAuth } from '../../contexts/AuthContext';
 import { getAllTokenBalances } from '../../lib/polygon';
+import priceService, { type PriceData } from '../../lib/priceService';
 
 interface TokenBalance {
   address: string;
@@ -16,6 +17,7 @@ interface TokenBalance {
 
 const ManageTokens: React.FC = () => {
   const [tokens, setTokens] = useState<TokenBalance[]>([]);
+  const [tokenPrices, setTokenPrices] = useState<PriceData>({});
   const [loading, setLoading] = useState(true);
   const [lastUpdated, setLastUpdated] = useState<Date>(new Date());
   const { wallet } = useAuth();
@@ -25,8 +27,20 @@ const ManageTokens: React.FC = () => {
     
     setLoading(true);
     try {
-      const balances = await getAllTokenBalances(wallet.address);
-      setTokens(balances);
+      const [balances, prices] = await Promise.all([
+        getAllTokenBalances(wallet.address),
+        priceService.fetchPrices(['POL', 'ETH', 'USDC', 'USDT', 'WETH', 'DAI', 'WBTC'])
+      ]);
+      
+      // Update token symbols (MATIC -> POL)
+      const updatedBalances = balances.map(token => ({
+        ...token,
+        symbol: token.symbol === 'MATIC' ? 'POL' : token.symbol,
+        name: token.symbol === 'MATIC' ? 'Polygon Ecosystem Token' : token.name
+      }));
+      
+      setTokens(updatedBalances);
+      setTokenPrices(prices);
       setLastUpdated(new Date());
     } catch (error) {
       console.error('Error fetching token balances:', error);
@@ -37,14 +51,33 @@ const ManageTokens: React.FC = () => {
 
   useEffect(() => {
     fetchTokenBalances();
+    
+    // Set up price refresh interval (every 2 minutes)
+    const priceInterval = setInterval(async () => {
+      if (wallet?.address) {
+        try {
+          const prices = await priceService.fetchPrices(['POL', 'ETH', 'USDC', 'USDT', 'WETH', 'DAI', 'WBTC']);
+          setTokenPrices(prices);
+        } catch (error) {
+          console.error('Error refreshing token prices:', error);
+        }
+      }
+    }, 120000);
+    
+    return () => clearInterval(priceInterval);
   }, [wallet?.address]);
 
+  // Calculate portfolio value using real-time prices
   const totalPortfolioValue = tokens.reduce((sum, token) => {
+    const price = tokenPrices[token.symbol];
+    if (price && parseFloat(token.balance) > 0) {
+      return sum + (parseFloat(token.balance) * price.price);
+    }
     return sum + parseFloat(token.balanceUSD || '0');
   }, 0);
 
-  const handleRefresh = () => {
-    fetchTokenBalances();
+  const handleRefresh = async () => {
+    await fetchTokenBalances();
   };
 
   if (!wallet) {
@@ -70,7 +103,7 @@ const ManageTokens: React.FC = () => {
             </div>
             <div>
               <h1 className="text-xl font-bold text-white">Manage Tokens</h1>
-              <p className="text-sm text-gray-400">Your Polygon token portfolio</p>
+              <p className="text-sm text-gray-400">Your Polygon token portfolio • POL ecosystem</p>
             </div>
           </div>
           
@@ -116,10 +149,28 @@ const ManageTokens: React.FC = () => {
           >
             <div className="flex items-center gap-3 mb-3">
               <TrendingUp size={20} className="text-green-400" />
-              <h3 className="font-medium text-white">Best Performer</h3>
+              <h3 className="font-medium text-white">POL Performance</h3>
             </div>
-            <p className="text-lg font-bold text-green-400">MATIC</p>
-            <p className="text-sm text-gray-400">+12.5% (24h)</p>
+            {tokenPrices.POL ? (
+              <>
+                <p className="text-lg font-bold text-white">POL</p>
+                <div className="flex items-center gap-2">
+                  <p className={`text-sm font-medium ${
+                    tokenPrices.POL.change24h >= 0 ? 'text-green-400' : 'text-red-400'
+                  }`}>
+                    {tokenPrices.POL.change24h >= 0 ? '+' : ''}{tokenPrices.POL.change24h.toFixed(2)}% (24h)
+                  </p>
+                </div>
+                <p className="text-xs text-gray-400 mt-1">
+                  ${tokenPrices.POL.price.toFixed(4)} per POL
+                </p>
+              </>
+            ) : (
+              <>
+                <p className="text-lg font-bold text-gray-400">Loading...</p>
+                <p className="text-sm text-gray-400">Price data unavailable</p>
+              </>
+            )}
           </motion.div>
 
           {/* Token Count */}
@@ -195,28 +246,43 @@ const ManageTokens: React.FC = () => {
                     <p className="font-semibold text-white">
                       {parseFloat(token.balance).toFixed(4)} {token.symbol}
                     </p>
-                    <p className="text-sm text-gray-400">
-                      ${parseFloat(token.balanceUSD || '0').toFixed(2)}
-                    </p>
                     
-                    {/* Price change indicator (dummy data) */}
-                    <div className="flex items-center gap-1 justify-end mt-1">
-                      {Math.random() > 0.5 ? (
-                        <>
-                          <TrendingUp size={12} className="text-green-400" />
-                          <span className="text-xs text-green-400">
-                            +{(Math.random() * 10).toFixed(1)}%
-                          </span>
-                        </>
-                      ) : (
-                        <>
-                          <TrendingDown size={12} className="text-red-400" />
-                          <span className="text-xs text-red-400">
-                            -{(Math.random() * 5).toFixed(1)}%
-                          </span>
-                        </>
-                      )}
-                    </div>
+                    {/* Real-time USD value */}
+                    {tokenPrices[token.symbol] ? (
+                      <>
+                        <p className="text-sm text-gray-400">
+                          ${(parseFloat(token.balance) * tokenPrices[token.symbol].price).toFixed(2)}
+                        </p>
+                        <p className="text-xs text-gray-500">
+                          ${tokenPrices[token.symbol].price.toFixed(tokenPrices[token.symbol].price < 1 ? 4 : 2)} per {token.symbol}
+                        </p>
+                      </>
+                    ) : (
+                      <p className="text-sm text-gray-400">
+                        ${parseFloat(token.balanceUSD || '0').toFixed(2)}
+                      </p>
+                    )}
+                    
+                    {/* Real-time price change indicator */}
+                    {tokenPrices[token.symbol] && (
+                      <div className="flex items-center gap-1 justify-end mt-1">
+                        {tokenPrices[token.symbol].change24h >= 0 ? (
+                          <>
+                            <TrendingUp size={12} className="text-green-400" />
+                            <span className="text-xs text-green-400">
+                              +{tokenPrices[token.symbol].change24h.toFixed(1)}%
+                            </span>
+                          </>
+                        ) : (
+                          <>
+                            <TrendingDown size={12} className="text-red-400" />
+                            <span className="text-xs text-red-400">
+                              {tokenPrices[token.symbol].change24h.toFixed(1)}%
+                            </span>
+                          </>
+                        )}
+                      </div>
+                    )}
                   </div>
                 </div>
                 

@@ -250,24 +250,6 @@ const Contact: React.FC = () => {
                 </div>
               </div>
             </div>
-
-            {/* Social Links */}
-            <div className="bg-gradient-to-r from-blue-500/10 to-cyan-500/10 rounded-2xl p-8 border border-blue-500/20">
-              <h3 className="text-xl font-bold text-white mb-4">Follow Us</h3>
-              <p className="text-gray-300 mb-4 text-sm">
-                Stay updated with the latest news and updates from Eth AI.
-              </p>
-              <div className="flex gap-4">
-                {['Twitter', 'Discord', 'Telegram', 'GitHub'].map((social) => (
-                  <button
-                    key={social}
-                    className="bg-gray-700/50 hover:bg-gray-600/50 text-gray-300 hover:text-cyan-400 px-4 py-2 rounded-lg transition-all duration-200 text-sm"
-                  >
-                    {social}
-                  </button>
-                ))}
-              </div>
-            </div>
           </motion.div>
         </div>
       </div>

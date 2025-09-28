@@ -197,7 +197,7 @@ class AIWalletService {
       if (balanceNum < 0.001) {
         return { 
           valid: false, 
-          message: 'Insufficient MATIC balance for gas fees. Please add some MATIC to your wallet.' 
+          message: 'Insufficient POL balance for gas fees. Please add some POL to your wallet.' 
         };
       }
 

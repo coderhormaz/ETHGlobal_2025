@@ -7,24 +7,32 @@ import {
   RefreshCw, 
   DollarSign,
   Clock,
-  ExternalLink
+  ExternalLink,
+  TrendingDown
 } from 'lucide-react';
 import AIAgentChat from './AIAgentChat';
 import WalletSetup from './WalletSetup';
 import { useAuth } from '../../contexts/AuthContext';
 import UniswapService from '../../lib/uniswap';
+import priceService, { type TokenPrice } from '../../lib/priceService';
 
 const AIAgentMain: React.FC = () => {
-  const { wallet: authWallet, loadWallet } = useAuth();
+  const { wallet: authWallet } = useAuth();
   const [showWalletSetup, setShowWalletSetup] = useState(false);
-  const [isLoadingWallet, setIsLoadingWallet] = useState(false);
   const [walletBalance, setWalletBalance] = useState<{[key: string]: string}>({});
   const [isRefreshingBalance, setIsRefreshingBalance] = useState(false);
+  const [tokenPrices, setTokenPrices] = useState<{[key: string]: TokenPrice}>({});
+  const [isPricesLoading, setIsPricesLoading] = useState(false);
 
-  // Refresh balances when wallet changes
+  // Refresh balances and prices when wallet changes
   useEffect(() => {
     if (authWallet && authWallet.privateKey !== '***encrypted***') {
       refreshBalances();
+      refreshPrices();
+      
+      // Set up price refresh interval (every 2 minutes)
+      const priceInterval = setInterval(refreshPrices, 120000);
+      return () => clearInterval(priceInterval);
     }
   }, [authWallet]);
 
@@ -33,7 +41,7 @@ const AIAgentMain: React.FC = () => {
     
     setIsRefreshingBalance(true);
     try {
-      const tokens = ['MATIC', 'ETH', 'USDC', 'USDT'];
+      const tokens = ['POL', 'ETH', 'USDC', 'USDT'];
       const balances: {[key: string]: string} = {};
       
       for (const token of tokens) {
@@ -50,16 +58,23 @@ const AIAgentMain: React.FC = () => {
     setIsRefreshingBalance(false);
   };
 
-  const handleUnlockWallet = async (password: string) => {
-    setIsLoadingWallet(true);
+  // Fetch real-time prices
+  const refreshPrices = async () => {
+    setIsPricesLoading(true);
     try {
-      await loadWallet(password);
-      setShowWalletSetup(false);
+      const tokens = ['POL', 'ETH', 'USDC', 'USDT'];
+      const prices = await priceService.getTokenPrices(tokens);
+      setTokenPrices(prices);
     } catch (error) {
-      console.error('Error unlocking wallet:', error);
-      throw error;
+      console.error('Error fetching prices:', error);
     }
-    setIsLoadingWallet(false);
+    setIsPricesLoading(false);
+  };
+
+  const handleUnlockWallet = async () => {
+    // Wallet is already unlocked by WalletSetup component
+    // Just close the modal and let the useEffect handle the rest
+    setShowWalletSetup(false);
   };
 
   const handleWalletRequired = () => {
@@ -97,50 +112,54 @@ const AIAgentMain: React.FC = () => {
               <WalletSetup
                 onWalletUnlocked={handleUnlockWallet}
                 onClose={() => setShowWalletSetup(false)}
-                isUnlocking={true}
-                isLoading={isLoadingWallet}
               />
             </div>
           </motion.div>
         )}
       </AnimatePresence>
 
-      <div className="flex h-full">
+      <div className="flex flex-col lg:flex-row h-full">
         {/* Sidebar */}
-        <div className="w-80 glass-premium border-r border-white/10 flex flex-col">
+        <div className="w-full lg:w-80 xl:w-96 2xl:w-[28rem] glass-premium lg:border-r border-white/10 flex flex-col lg:min-h-0 max-h-[40vh] lg:max-h-none overflow-auto lg:overflow-visible">
           {/* Header */}
-          <div className="p-6 border-b border-white/10">
+          <div className="p-4 lg:p-6 border-b border-white/10">
             <div className="flex items-center gap-3 mb-4">
-              <div className="w-12 h-12 bg-brand-gradient rounded-2xl flex items-center justify-center">
-                <Bot className="text-white" size={20} />
+              <div className="w-10 h-10 lg:w-12 lg:h-12 bg-brand-gradient rounded-2xl flex items-center justify-center">
+                <Bot className="text-white" size={18} />
               </div>
               <div>
-                <h1 className="text-xl font-bold text-white">AI Trading Agent</h1>
-                <p className="text-gray-400 text-sm">Powered by Gemini AI</p>
+                <h1 className="text-lg lg:text-xl font-bold text-white">AI Trading Agent</h1>
+                <p className="text-gray-400 text-xs lg:text-sm">Powered by Gemini AI</p>
               </div>
             </div>
 
             {/* Connection Status */}
-            <div className="flex items-center gap-2 p-3 bg-green-500/10 rounded-xl border border-green-500/20">
+            <div className="flex items-center gap-2 p-2 lg:p-3 bg-green-500/10 rounded-xl border border-green-500/20">
               <div className="w-2 h-2 bg-green-400 rounded-full animate-pulse"></div>
-              <span className="text-green-400 text-sm font-medium">Connected to Polygon</span>
+              <span className="text-green-400 text-xs lg:text-sm font-medium">Connected to Polygon</span>
             </div>
           </div>
 
           {/* Wallet Section */}
-          <div className="p-6 border-b border-white/10">
+          <div className="p-4 lg:p-6 border-b border-white/10">
             <div className="flex items-center justify-between mb-4">
-              <h2 className="text-lg font-semibold text-white flex items-center gap-2">
-                <Wallet size={18} />
-                Wallet
+              <h2 className="text-base lg:text-lg font-semibold text-white flex items-center gap-2">
+                <Wallet size={16} className="lg:hidden xl:inline" />
+                <Wallet size={18} className="hidden lg:inline xl:hidden" />
+                <Wallet size={18} className="hidden xl:inline" />
+                <span className="hidden sm:inline">Wallet</span>
               </h2>
               {isWalletReady && (
                 <button
-                  onClick={refreshBalances}
-                  disabled={isRefreshingBalance}
+                  onClick={() => {
+                    refreshBalances();
+                    refreshPrices();
+                  }}
+                  disabled={isRefreshingBalance || isPricesLoading}
                   className="p-2 text-gray-400 hover:text-white transition-colors"
+                  title="Refresh balances and prices"
                 >
-                  <RefreshCw size={16} className={isRefreshingBalance ? 'animate-spin' : ''} />
+                  <RefreshCw size={16} className={(isRefreshingBalance || isPricesLoading) ? 'animate-spin' : ''} />
                 </button>
               )}
             </div>
@@ -167,21 +186,51 @@ const AIAgentMain: React.FC = () => {
                 {/* Token Balances */}
                 <div className="space-y-2">
                   <h3 className="text-white font-medium text-sm">Token Balances</h3>
-                  {Object.entries(walletBalance).map(([token, balance]) => (
-                    <div key={token} className="flex items-center justify-between p-2 bg-black/20 rounded-lg">
-                      <div className="flex items-center gap-2">
-                        <div className="w-6 h-6 bg-gradient-to-r from-blue-500 to-purple-500 rounded-full flex items-center justify-center">
-                          <span className="text-white text-xs font-bold">
-                            {token[0]}
-                          </span>
+                  {Object.entries(walletBalance).map(([token, balance]) => {
+                    const price = tokenPrices[token];
+                    const balanceNum = parseFloat(balance) || 0;
+                    const value = price ? balanceNum * price.price : 0;
+                    
+                    return (
+                      <div key={token} className="p-2 bg-black/20 rounded-lg">
+                        <div className="flex items-center justify-between mb-1">
+                          <div className="flex items-center gap-2">
+                            <div className="w-6 h-6 bg-gradient-to-r from-blue-500 to-purple-500 rounded-full flex items-center justify-center">
+                              <span className="text-white text-xs font-bold">
+                                {token === 'POL' ? 'P' : token[0]}
+                              </span>
+                            </div>
+                            <span className="text-white text-sm font-medium">{token}</span>
+                            {price && (
+                              <div className={`flex items-center gap-1 px-1.5 py-0.5 rounded text-xs ${
+                                price.change24h >= 0 
+                                  ? 'bg-green-500/10 text-green-400' 
+                                  : 'bg-red-500/10 text-red-400'
+                              }`}>
+                                {price.change24h >= 0 ? <TrendingUp size={10} /> : <TrendingDown size={10} />}
+                                {Math.abs(price.change24h).toFixed(1)}%
+                              </div>
+                            )}
+                          </div>
+                          <div className="text-right">
+                            <div className="text-gray-300 text-sm">
+                              {formatBalance(balance)}
+                            </div>
+                            {price && value > 0 && (
+                              <div className="text-gray-500 text-xs">
+                                ${value.toFixed(2)}
+                              </div>
+                            )}
+                          </div>
                         </div>
-                        <span className="text-white text-sm">{token}</span>
+                        {price && (
+                          <div className="text-gray-400 text-xs">
+                            ${price.price.toFixed(price.price < 1 ? 4 : 2)} per {token}
+                          </div>
+                        )}
                       </div>
-                      <span className="text-gray-300 text-sm">
-                        {formatBalance(balance)}
-                      </span>
-                    </div>
-                  ))}
+                    );
+                  })}
                   
                   {Object.keys(walletBalance).length === 0 && !isRefreshingBalance && (
                     <p className="text-gray-500 text-sm text-center py-4">
@@ -189,9 +238,12 @@ const AIAgentMain: React.FC = () => {
                     </p>
                   )}
                   
-                  {isRefreshingBalance && (
+                  {(isRefreshingBalance || isPricesLoading) && (
                     <div className="text-center py-4">
                       <RefreshCw className="w-4 h-4 text-blue-400 animate-spin mx-auto" />
+                      <p className="text-gray-400 text-xs mt-1">
+                        {isRefreshingBalance ? 'Updating balances...' : 'Loading prices...'}
+                      </p>
                     </div>
                   )}
                 </div>
@@ -238,29 +290,29 @@ const AIAgentMain: React.FC = () => {
           </div>
 
           {/* Features Section */}
-          <div className="p-6 flex-1">
-            <h2 className="text-lg font-semibold text-white mb-4">Features</h2>
-            <div className="space-y-3">
-              <div className="flex items-center gap-3 p-3 bg-black/20 rounded-xl">
-                <TrendingUp className="text-blue-400" size={16} />
+          <div className="p-4 lg:p-6 flex-1 hidden lg:block">
+            <h2 className="text-base lg:text-lg font-semibold text-white mb-3 lg:mb-4">Features</h2>
+            <div className="space-y-2 lg:space-y-3">
+              <div className="flex items-center gap-2 lg:gap-3 p-2 lg:p-3 bg-black/20 rounded-xl">
+                <TrendingUp className="text-blue-400" size={14} />
                 <div>
-                  <p className="text-white text-sm font-medium">Smart Trading</p>
+                  <p className="text-white text-xs lg:text-sm font-medium">Smart Trading</p>
                   <p className="text-gray-400 text-xs">Natural language swap commands</p>
                 </div>
               </div>
               
-              <div className="flex items-center gap-3 p-3 bg-black/20 rounded-xl">
-                <DollarSign className="text-green-400" size={16} />
+              <div className="flex items-center gap-2 lg:gap-3 p-2 lg:p-3 bg-black/20 rounded-xl">
+                <DollarSign className="text-green-400" size={14} />
                 <div>
-                  <p className="text-white text-sm font-medium">Real-time Prices</p>
+                  <p className="text-white text-xs lg:text-sm font-medium">Real-time Prices</p>
                   <p className="text-gray-400 text-xs">Live Uniswap V3 quotes</p>
                 </div>
               </div>
               
-              <div className="flex items-center gap-3 p-3 bg-black/20 rounded-xl">
-                <Clock className="text-purple-400" size={16} />
+              <div className="flex items-center gap-2 lg:gap-3 p-2 lg:p-3 bg-black/20 rounded-xl">
+                <Clock className="text-purple-400" size={14} />
                 <div>
-                  <p className="text-white text-sm font-medium">Auto Execution</p>
+                  <p className="text-white text-xs lg:text-sm font-medium">Auto Execution</p>
                   <p className="text-gray-400 text-xs">Automated transaction signing</p>
                 </div>
               </div>
@@ -269,7 +321,7 @@ const AIAgentMain: React.FC = () => {
         </div>
 
         {/* Chat Area */}
-        <div className="flex-1">
+        <div className="flex-1 min-w-0 lg:min-h-0">
           <AIAgentChat 
             wallet={isWalletReady ? authWallet : null} 
             onWalletRequired={handleWalletRequired}

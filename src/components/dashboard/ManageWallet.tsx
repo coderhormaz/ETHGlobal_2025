@@ -16,6 +16,7 @@ import {
 import QRCode from 'react-qr-code';
 import { useAuth } from '../../contexts/AuthContext';
 import { getMaticBalance, getRecentTransactions } from '../../lib/polygon';
+import priceService, { type TokenPrice } from '../../lib/priceService';
 
 interface Transaction {
   hash: string;
@@ -36,6 +37,7 @@ const ManageWallet: React.FC = () => {
   const [decryptError, setDecryptError] = useState('');
   const [isDecrypting, setIsDecrypting] = useState(false);
   const [balance, setBalance] = useState('0');
+  const [polPrice, setPolPrice] = useState<TokenPrice | null>(null);
   const [transactions, setTransactions] = useState<Transaction[]>([]);
   const [loading, setLoading] = useState(true);
   const [copied, setCopied] = useState<string | null>(null);
@@ -45,6 +47,18 @@ const ManageWallet: React.FC = () => {
   useEffect(() => {
     if (wallet?.address) {
       fetchWalletData();
+      
+      // Set up price refresh interval (every 2 minutes)
+      const priceInterval = setInterval(async () => {
+        try {
+          const price = await priceService.getTokenPrice('POL');
+          setPolPrice(price);
+        } catch (error) {
+          console.error('Error refreshing price:', error);
+        }
+      }, 120000);
+      
+      return () => clearInterval(priceInterval);
     }
   }, [wallet?.address]);
 
@@ -53,13 +67,15 @@ const ManageWallet: React.FC = () => {
     
     setLoading(true);
     try {
-      const [maticBalance, recentTxs] = await Promise.all([
-        getMaticBalance(wallet.address),
-        getRecentTransactions(wallet.address)
+      const [polBalance, recentTxs, priceData] = await Promise.all([
+        getMaticBalance(wallet.address), // Still using getMaticBalance function (it gets POL)
+        getRecentTransactions(wallet.address),
+        priceService.getTokenPrice('POL')
       ]);
       
-      setBalance(maticBalance);
+      setBalance(polBalance);
       setTransactions(recentTxs);
+      setPolPrice(priceData);
     } catch (error) {
       console.error('Error fetching wallet data:', error);
     } finally {
@@ -119,7 +135,7 @@ const ManageWallet: React.FC = () => {
           </div>
           <div>
             <h1 className="text-xl font-bold text-white">Manage Wallet</h1>
-            <p className="text-sm text-gray-400">Wallet settings and security</p>
+            <p className="text-sm text-gray-400">Wallet settings • POL (formerly MATIC)</p>
           </div>
         </div>
       </div>
@@ -136,7 +152,7 @@ const ManageWallet: React.FC = () => {
           >
             <div className="flex items-center gap-3 mb-4">
               <DollarSign size={20} className="text-green-400" />
-              <h3 className="font-semibold text-white">Total Balance</h3>
+              <h3 className="font-semibold text-white">POL Balance</h3>
             </div>
             
             {loading ? (
@@ -147,11 +163,31 @@ const ManageWallet: React.FC = () => {
             ) : (
               <div>
                 <p className="text-3xl font-bold text-white mb-1">
-                  {parseFloat(balance).toFixed(4)} MATIC
+                  {parseFloat(balance).toFixed(4)} POL
                 </p>
-                <p className="text-sm text-gray-400">
-                  ≈ ${(parseFloat(balance) * 0.85).toFixed(2)} USD
-                </p>
+                {polPrice ? (
+                  <div className="space-y-1">
+                    <p className="text-sm text-gray-400">
+                      ≈ ${(parseFloat(balance) * polPrice.price).toFixed(2)} USD
+                    </p>
+                    <div className="flex items-center gap-2">
+                      <p className="text-xs text-gray-400">
+                        ${polPrice.price.toFixed(4)} per POL
+                      </p>
+                      <span className={`text-xs px-2 py-1 rounded ${
+                        polPrice.change24h >= 0 
+                          ? 'bg-green-500/20 text-green-400' 
+                          : 'bg-red-500/20 text-red-400'
+                      }`}>
+                        {polPrice.change24h >= 0 ? '+' : ''}{polPrice.change24h.toFixed(2)}%
+                      </span>
+                    </div>
+                  </div>
+                ) : (
+                  <p className="text-sm text-gray-400">
+                    Price unavailable
+                  </p>
+                )}
               </div>
             )}
           </motion.div>
@@ -355,8 +391,13 @@ const ManageWallet: React.FC = () => {
                   
                   <div className="text-right">
                     <p className="text-white font-medium">
-                      {parseFloat(tx.value).toFixed(4)} MATIC
+                      {parseFloat(tx.value).toFixed(4)} POL
                     </p>
+                    {polPrice && (
+                      <p className="text-xs text-gray-400">
+                        ≈ ${(parseFloat(tx.value) * polPrice.price).toFixed(2)}
+                      </p>
+                    )}
                     <div className="flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
                       <ExternalLink size={12} className="text-gray-400" />
                       <span className="text-xs text-gray-400">View on Explorer</span>
